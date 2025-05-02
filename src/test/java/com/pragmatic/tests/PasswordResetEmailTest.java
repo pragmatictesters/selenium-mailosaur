@@ -7,6 +7,7 @@ import com.mailosaur.models.SearchCriteria;
 import com.pragmatic.pages.PasswordResetPage;
 import com.pragmatic.pages.ResetPasswordEntryPage;
 import com.pragmatic.util.ConfigReader;
+import com.pragmatic.util.EmailManager;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -28,23 +29,22 @@ public class PasswordResetEmailTest extends BaseTest {
 
     @Test
     public void testEmailSubjectVerification() throws IOException, MailosaurException {
+        EmailManager emailManager = new EmailManager();
+        String testEmail = emailManager.generateRandomEmail("ptl");
+
         driver.get(ConfigReader.getApplicationUrl("passwordreset"));
         passwordResetPage.enterEmail(testEmail);
         passwordResetPage.clickSubmitButton();
 
-        MessageSearchParams params = new MessageSearchParams();
-        params.withServer(serverId);
-        params.withTimeout(ConfigReader.getTimeout());
 
-        SearchCriteria criteria = new SearchCriteria();
-        criteria.withSentTo(testEmail);
-
-        Message message = mailosaur.messages().get(params, criteria);
-
+        Message message = emailManager.getLatestEmail(testEmail);
         Assert.assertNotNull(message, "Email message should not be null");
         Assert.assertEquals(message.subject(), "Set your new password for ACME Product",
                 "Email subject does not match the expected value");
+        emailManager.deleteEmail(message);
     }
+
+
 
     @Test
     public void testInteractingWithLinksInEmail() throws IOException, MailosaurException {
